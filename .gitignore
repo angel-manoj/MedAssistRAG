@@ -11,5 +11,12 @@ venv/
 .venv/
 env/
 
-data/
+data/data_combined
+data/embeddings
+data/processed
+data/raw
+data/tokenized
+data/finetune_data.json
+
+
 models/
