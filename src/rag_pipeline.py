@@ -10,6 +10,7 @@ You are an AI assistant with access to tools.
 Available tools:
 1. SearchKB(query) - search knowledge base
 2. CreateTicket(issue) - create support ticket
+3. MedicalDisclaimerTool(query) - add disclaimer for medical symptom related questions
 
 Decide the best tool.
 
@@ -20,25 +21,71 @@ Query: {query}
 """
 
 
-def build_final_prompt(context, query):
-    return f"""
-You are a medical assistant.
+class RAGPipeline:
+    def __init__(self):
+        self.llm = LLM()
 
-Answer using ONLY the context below.
-Give a clear 2-3 sentence answer.
+    def query(self, query):
+        # =========================
+        # STEP 1: TOOL DECISION
+        # =========================
+        decision_raw = self.llm.generate_raw(tool_prompt(query))
 
-Context:
-{context}
+        try:
+            decision = json.loads(decision_raw)
+        except:
+            decision = {"tool": "SearchKB", "args": {"query": query}}
 
-Question:
-{query}
+        # =========================
+        # STEP 2: EXECUTE TOOL
+        # =========================
+        try:
+            result = execute_tool(decision["tool"], decision["args"])
+        except:
+            result = []
 
-Answer:
-"""
+        # =========================
+        # STEP 3: GENERATE ANSWER
+        # =========================
+        if decision["tool"] == "SearchKB":
+            if not result:
+                answer = "No relevant information found."
+            else:
+                context = "\n".join(result)
+                answer = self.llm.generate(query, context)
+
+        elif decision["tool"] == "CreateTicket":
+            answer = f"Your issue has been registered: {result.get('issue', 'Unknown')}"
+            context = ""
+
+        elif decision["tool"] == "MedicalDisclaimerTool":
+            # First search KB normally
+            kb_result = execute_tool("SearchKB", {"query": query})
+
+            if not kb_result:
+                answer = "No relevant medical information found."
+            else:
+                context = "\n".join(kb_result)
+                base_answer = self.llm.generate(query, context)
+                disclaimer = result["disclaimer"]
+                answer = (
+                    base_answer
+                    + "\n\n"
+                    + disclaimer
+                )
+        else:
+            answer = "Something went wrong."
+            context = ""
+
+        return {
+            "answer": answer,
+            "sources": result if isinstance(result, list) else [str(result)]
+        }
 
 
+# Optional CLI (keep this if you want manual testing)
 def main():
-    llm = LLM()
+    rag = RAGPipeline()
 
     print("🧠 Tool-enabled RAG ready (type 'exit')\n")
 
@@ -48,32 +95,10 @@ def main():
         if query.lower() in ["exit", "quit"]:
             break
 
-        # 🧠 STEP 1: Decide tool
-        decision_raw = llm.generate(tool_prompt(query))
+        result = rag.query(query)
 
-        try:
-            decision = json.loads(decision_raw)
-        except:
-            print("⚠️ Failed to parse tool decision, using fallback")
-            decision = {"tool": "SearchKB", "args": {"query": query}}
-
-        print("\n🛠 Tool Decision:", decision)
-
-        # ⚙️ STEP 2: Execute tool
-        result = execute_tool(decision["tool"], decision["args"])
-
-        print("\n📄 Tool Result:", result)
-
-        # 🧠 STEP 3: Generate final answer
-        if decision["tool"] == "SearchKB":
-            context = "\n".join(result)
-            final_prompt = build_final_prompt(context, query)
-            answer = llm.generate(final_prompt)
-
-        else:
-            answer = str(result)
-
-        print("\n💡 Answer:\n", answer)
+        print("\n📄 Sources:", result["sources"])
+        print("\n💡 Answer:\n", result["answer"])
         print("-" * 50)
 
 

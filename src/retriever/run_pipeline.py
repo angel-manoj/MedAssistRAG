@@ -1,5 +1,5 @@
-from src.data.load_data import load_data
-from src.data.chunk_data import chunk_text
+from src.data_utils.load_data import load_data
+from src.data_utils.chunk_data import chunk_text
 from src.retriever.embed import load_model, create_embeddings
 from src.retriever.build_faiss import build_index, save_index
 

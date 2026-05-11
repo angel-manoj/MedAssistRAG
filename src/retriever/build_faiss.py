@@ -11,7 +11,7 @@ def build_index(embeddings):
     return index
 
 def save_index(index, texts):
-    faiss.write_index(index, "data/embeddings/faiss_index.bin")
+    faiss.write_index(index, "data/embeddings/faiss_index_after_retriever_finetuning.bin")
 
     with open("data/embeddings/texts.pkl", "wb") as f:
         pickle.dump(texts, f)

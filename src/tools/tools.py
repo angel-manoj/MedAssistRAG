@@ -20,6 +20,20 @@ TOOLS = [
             },
             "required": ["issue"]
         }
+    },
+    # =========================
+    # NEW TOOL
+    # =========================
+    {
+        "name": "MedicalDisclaimerTool",
+        "description": "Adds medical safety disclaimer for symptom-related queries",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"}
+            },
+            "required": ["query"]
+        }
     }
 ]
 

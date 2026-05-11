@@ -14,6 +14,11 @@ def execute_tool(tool_name, args):
             "status": "ticket_created",
             "issue": args["issue"]
         }
+    elif tool_name == "MedicalDisclaimerTool":
+        return {
+            "disclaimer":
+            "⚠️ This information is AI-generated and should not be considered professional medical advice. Please consult a qualified doctor for accurate diagnosis and treatment."
+        }
 
     else:
         return {"error": "Unknown tool"}
